@@ -45,10 +45,11 @@ class _MainPageState extends State<MainPage> {
     switch (_selectedIndex) {
       case 0:
         return ModelScreen(
-          key: const ValueKey('modelA'),      // ← 탭마다 다른 key
-          title: '모델 A 예측 결과',
-          runButtonText: '모델 A 실행',
+          key: const ValueKey('EfficientNet'),
+          title: 'EfficientNet 예측 결과',
+          runButtonText: 'EfficientNet 실행',
           onClassify: (file) => ModelAClassifier.instance.classify(file),
+          // 또는 onClassify: ModelAClassifier.instance.classify,
         );
       case 1:
         return ModelScreen(
@@ -74,7 +75,7 @@ class _MainPageState extends State<MainPage> {
       appBar: AppBar(
         title: Text(
           switch (_selectedIndex) {
-            0 => '모델 A - 질병 감지',
+            0 => 'EfficientNet - 질병 감지',
             1 => '모델 B - 질병 감지',
             2 => '모델 C - 질병 감지',
             _ => '닭 질병 감지',

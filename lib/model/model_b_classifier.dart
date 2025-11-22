@@ -11,7 +11,7 @@ class ModelBClassifier {
   Future<void> loadModel() async {
     if (_isLoaded) return;
 
-    // TODO: 실제 TFLite 모델 B 로딩
+    // TODO: 실제 TFLite 모델 C 로딩
     await Future.delayed(const Duration(milliseconds: 300));
 
     _isLoaded = true;
@@ -23,9 +23,9 @@ class ModelBClassifier {
     }
 
     final labels = [
-      '정상 (모델 B)',
-      '피부/깃털 질병 의심 (모델 B)',
-      '기타 질병 의심 (모델 B)',
+      '정상 (모델 C)',
+      '호흡기 + 소화기 복합 질병 의심 (모델 C)',
+      '긴급 진료 필요 (모델 C)',
     ];
 
     final random = Random();

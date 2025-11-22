@@ -32,9 +32,11 @@ class PredictionCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            Text(
-              resultText!,
-              style: const TextStyle(fontSize: 14),
+            Center(
+              child: Text(
+                resultText!,
+                style: const TextStyle(fontSize: 14),
+              ),
             ),
           ],
         ),

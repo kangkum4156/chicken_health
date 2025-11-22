@@ -6,6 +6,7 @@ import '../camera/camera_service.dart';
 import '../widgets/primary_button.dart';
 import '../widgets/prediction_card.dart';
 
+/// 이미지 파일을 받아서 예측 텍스트를 돌려주는 함수 타입
 typedef ClassifyFunc = Future<String> Function(File imageFile);
 
 class ModelScreen extends StatefulWidget {
@@ -29,7 +30,7 @@ class _ModelScreenState extends State<ModelScreen> {
   String? _resultText;
   bool _isLoading = false;
 
-  // 카메라에서 촬영
+  /// 카메라에서 촬영
   Future<void> _pickFromCamera() async {
     final file = await CameraService.instance.takePicture();
     if (file == null) return;
@@ -40,7 +41,7 @@ class _ModelScreenState extends State<ModelScreen> {
     });
   }
 
-  // 갤러리에서 선택
+  /// 갤러리에서 선택
   Future<void> _pickFromGallery() async {
     final file = await CameraService.instance.pickFromGallery();
     if (file == null) return;
@@ -51,7 +52,7 @@ class _ModelScreenState extends State<ModelScreen> {
     });
   }
 
-  // 사진 촬영 버튼 눌렀을 때: 바텀시트로 선택
+  /// 사진 촬영 버튼 눌렀을 때: 바텀시트로 카메라/갤러리 선택
   Future<void> _selectImageSource() async {
     await showModalBottomSheet(
       context: context,
@@ -86,6 +87,7 @@ class _ModelScreenState extends State<ModelScreen> {
     );
   }
 
+  /// "모델 실행" 버튼을 눌렀을 때
   Future<void> _runModel() async {
     if (_imageFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -97,6 +99,7 @@ class _ModelScreenState extends State<ModelScreen> {
     setState(() => _isLoading = true);
 
     try {
+      // 여기서 실제 모델(A/B/C)이 돌아감
       final result = await widget.onClassify(_imageFile!);
       setState(() => _resultText = result);
     } catch (e) {
@@ -129,7 +132,7 @@ class _ModelScreenState extends State<ModelScreen> {
           const SizedBox(height: 16),
           PrimaryButton(
             text: '사진 촬영',
-            onPressed: _selectImageSource, // 여기만 변경
+            onPressed: _selectImageSource,
           ),
           const SizedBox(height: 12),
           PrimaryButton(
