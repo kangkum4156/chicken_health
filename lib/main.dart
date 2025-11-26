@@ -53,9 +53,9 @@ class _MainPageState extends State<MainPage> {
         );
       case 1:
         return ModelScreen(
-          key: const ValueKey('modelB'),
-          title: '모델 B 예측 결과',
-          runButtonText: '모델 B 실행',
+          key: const ValueKey('MobileNet'),
+          title: 'MobileNet 예측 결과',
+          runButtonText: 'MobileNet 실행',
           onClassify: (file) => ModelBClassifier.instance.classify(file),
         );
       case 2:
@@ -76,7 +76,7 @@ class _MainPageState extends State<MainPage> {
         title: Text(
           switch (_selectedIndex) {
             0 => 'EfficientNet - 질병 감지',
-            1 => '모델 B - 질병 감지',
+            1 => 'MobileNet - 질병 감지',
             2 => '모델 C - 질병 감지',
             _ => '닭 질병 감지',
           },

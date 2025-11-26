@@ -1,0 +1,4 @@
+0 Coccidiosis - go to hospital
+1 Healthy!
+2 New Castle - go to hospital
+3 Salmonella - go to hospital
