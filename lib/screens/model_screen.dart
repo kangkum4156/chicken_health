@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import '../camera/camera_service.dart';
 import '../widgets/primary_button.dart';
 import '../widgets/prediction_card.dart';
+import '../yolo/detect_object.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
 /// 이미지 파일을 받아서 예측 텍스트를 돌려주는 함수 타입
 typedef ClassifyFunc = Future<String> Function(File imageFile);
@@ -29,6 +31,15 @@ class _ModelScreenState extends State<ModelScreen> {
   File? _imageFile;
   String? _resultText;
   bool _isLoading = false;
+
+  Future<void> checkAsset() async {
+    try {
+      final data = await rootBundle.load('assets/models/yolov11_f32.tflite');
+      print('Asset loaded, size: ${data.lengthInBytes}');
+    } catch (e) {
+      print('Asset load failed: $e');
+    }
+  }
 
   /// 카메라에서 촬영
   Future<void> _pickFromCamera() async {
@@ -113,6 +124,54 @@ class _ModelScreenState extends State<ModelScreen> {
     }
   }
 
+  Future<void> _detectObject() async {
+    if (_imageFile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('먼저 사진을 선택하세요!')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      debugPrint("객체 탐지 시작");
+      final dets = await YoloDetector.instance.detectFromFile(
+        _imageFile!,
+        scoreThreshold: 0.25,
+      );
+
+      if (dets.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('객체를 찾지 못했습니다.')),
+        );
+        return;
+      }
+
+      // 👇 여기에서 "최상위 confidence 하나" 뽑기
+      dets.sort((a, b) => b.score.compareTo(a.score));
+      final best = dets.first;
+
+      final croppedFile = await YoloDetector.instance.cropImageFile(
+        _imageFile!,
+        best,
+      );
+
+      final confidence = (best.score * 100).toStringAsFixed(1);
+
+      setState(() {
+        _imageFile = croppedFile;
+        _resultText = 'Confidence: $confidence%';
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('객체 탐지 중 오류: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -133,6 +192,12 @@ class _ModelScreenState extends State<ModelScreen> {
           PrimaryButton(
             text: '사진 촬영',
             onPressed: _selectImageSource,
+          ),
+          const SizedBox(height: 12),
+          PrimaryButton(
+            text: '객체 탐지',
+            onPressed: _detectObject,
+            isLoading: _isLoading,
           ),
           const SizedBox(height: 12),
           PrimaryButton(

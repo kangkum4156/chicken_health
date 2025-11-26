@@ -5,6 +5,9 @@ import 'model/model_a_classifier.dart';
 import 'model/model_b_classifier.dart';
 import 'model/model_c_classifier.dart';
 
+import 'package:flutter/services.dart' show rootBundle;
+import 'yolo/detect_object.dart';
+
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const ChickenDiseaseApp());
@@ -35,6 +38,23 @@ class MainPage extends StatefulWidget {
 }
 
 class _MainPageState extends State<MainPage> {
+  @override
+  void initState() {
+    super.initState();
+    _initYolo();
+  }
+  Future<void> _initYolo() async {
+    try {
+      await YoloDetector.instance.init('assets/models/yolov11_float32.tflite');
+      print('YOLO 모델 초기화 완료');
+    } catch (e) {
+      print('YOLO 모델 초기화 실패: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('YOLO 모델 초기화 실패')),
+      );
+    }
+  }
+
   int _selectedIndex = 0;
 
   void _onItemTapped(int index) {
