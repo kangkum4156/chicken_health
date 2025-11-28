@@ -138,7 +138,7 @@ class _ModelScreenState extends State<ModelScreen> {
       debugPrint("객체 탐지 시작");
       final dets = await YoloDetector.instance.detectFromFile(
         _imageFile!,
-        scoreThreshold: 0.25,
+        scoreThreshold: 0.3, // 낮춰서 탐지 가능성 ↑
       );
 
       if (dets.isEmpty) {
@@ -148,8 +148,6 @@ class _ModelScreenState extends State<ModelScreen> {
         return;
       }
 
-      // 👇 여기에서 "최상위 confidence 하나" 뽑기
-      dets.sort((a, b) => b.score.compareTo(a.score));
       final best = dets.first;
 
       final croppedFile = await YoloDetector.instance.cropImageFile(
@@ -171,6 +169,7 @@ class _ModelScreenState extends State<ModelScreen> {
       if (mounted) setState(() => _isLoading = false);
     }
   }
+
 
   @override
   Widget build(BuildContext context) {

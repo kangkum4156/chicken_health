@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'dart:math';
-import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
@@ -48,13 +47,13 @@ class YoloDetector {
     debugPrint("YOLO init: inputShape=$_inputShape");
   }
 
+  double _sigmoid(double x) => 1 / (1 + exp(-x));
+
   Future<List<Detection>> detectFromFile(
       File imageFile, {
-        double scoreThreshold = 0.2,
+        double scoreThreshold = 0.3,
       }) async {
-    if (!_initialized) {
-      throw Exception("Call init() first");
-    }
+    if (!_initialized) throw Exception("Call init() first");
 
     // 1. 이미지 로드
     final bytes = await imageFile.readAsBytes();
@@ -78,9 +77,9 @@ class YoloDetector {
         return List.generate(inW, (x) {
           final p = resized.getPixel(x, y);
           return [
-            p.r / 255.0,
-            p.g / 255.0,
-            p.b / 255.0,
+            p.r.toDouble() / 255.0,
+            p.g.toDouble() / 255.0,
+            p.b.toDouble() / 255.0,
           ];
         });
       }),
@@ -88,38 +87,34 @@ class YoloDetector {
 
     debugPrint("resize 완료");
 
-    // 4. Output 미리 생성 (Float32List 1D)
+    // 4. Output 미리 생성
     final outputTensor = _interpreter.getOutputTensor(0);
-    final shape = outputTensor.shape; // [1, 5, 21504]
+    final shape = outputTensor.shape; // [1,5,21504]
 
-    // 3D 리스트로 미리 생성
-        final output = List.generate(
-          shape[0], // 1
-              (_) => List.generate(
-            shape[1], // 5
-                (_) => List.filled(shape[2], 0.0), // 21504
-          ),
-        );
+    final output = List.generate(
+      shape[0],
+          (_) => List.generate(
+        shape[1],
+            (_) => List.filled(shape[2], 0.0),
+      ),
+    );
 
-    // Inference 실행
+    // 5. Inference
     _interpreter.run(input, output);
-
     debugPrint("interpret 완료");
 
-
-    // output: [1][5][21504]
     final detections = <Detection>[];
-    final batch = output[0]; // batch 0
-    final B = batch[0].length; // 21504
+    final batch = output[0];
+    final B = batch[0].length;
 
     for (int i = 0; i < B; i++) {
-      final score = batch[4][i]; // 4번 채널 = score
+      final score = _sigmoid(batch[4][i].toDouble());
       if (score < scoreThreshold) continue;
 
-      final cx = batch[0][i] * oriImage.width;
-      final cy = batch[1][i] * oriImage.height;
-      final w  = batch[2][i] * oriImage.width;
-      final h  = batch[3][i] * oriImage.height;
+      final cx = batch[0][i].toDouble() * oriImage.width;
+      final cy = batch[1][i].toDouble() * oriImage.height;
+      final w = batch[2][i].toDouble() * oriImage.width;
+      final h = batch[3][i].toDouble() * oriImage.height;
 
       final x1 = cx - w / 2;
       final y1 = cy - h / 2;
@@ -132,19 +127,25 @@ class YoloDetector {
           y1: y1,
           x2: x2,
           y2: y2,
-          classIndex: 0, // class 없으면 0 고정
+          classIndex: 0,
           score: score,
         ),
       );
     }
 
-// Score 기준 정렬 후 반환
-    detections.sort((a, b) => b.score.compareTo(a.score));
-    return detections;
+    // NMS 대체: 최대 영역 박스 하나만 반환
+    if (detections.length > 1) {
+      detections.sort((a, b) {
+        final areaA = (a.x2 - a.x1) * (a.y2 - a.y1);
+        final areaB = (b.x2 - b.x1) * (b.y2 - b.y1);
+        return areaB.compareTo(areaA);
+      });
+      return [detections.first];
+    }
 
+    return detections;
   }
 
-  /// Crop function
   Future<File> cropImageFile(File originalFile, Detection box) async {
     final bytes = await originalFile.readAsBytes();
     final oriImage = img.decodeImage(bytes)!;
